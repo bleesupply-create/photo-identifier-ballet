@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Image #{{ image.id }} - Ballet Photo Organizer{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <a href="{{ url_for('index') }}" class="back-link">&larr; Dashboard</a>
+    <h1>Image #{{ image.id }}</h1>
+    <p class="image-path" title="{{ image.file_path }}">{{ image.file_path | replace('/', ' / ') }}</p>
+</div>
+
+<div class="image-viewer">
+    <div class="image-container" id="imageContainer">
+        <img
+            src="{{ url_for('image_file', image_id=image.id) }}"
+            alt="Image #{{ image.id }}"
+            class="full-image"
+            id="fullImage"
+            onload="drawOverlays()"
+        >
+        {% for face in faces %}
+        <div class="face-overlay"
+             data-x1="{{ face.bbox_x1 }}"
+             data-y1="{{ face.bbox_y1 }}"
+             data-x2="{{ face.bbox_x2 }}"
+             data-y2="{{ face.bbox_y2 }}"
+             data-label="{% if face.dancer_name %}{{ face.dancer_name }}{% else %}#{{ face.cluster_id or '?' }}{% endif %}"
+             data-cluster-id="{{ face.cluster_id or '' }}"
+             data-face-id="{{ face.id }}"
+        >
+            <span class="overlay-label">
+                {% if face.dancer_name %}
+                    {{ face.dancer_name }}
+                {% elif face.cluster_id %}
+                    Cluster #{{ face.cluster_id }}
+                {% else %}
+                    Unclustered
+                {% endif %}
+            </span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% if faces %}
+<div class="image-faces-list">
+    <h2>Detected Faces ({{ faces|length }})</h2>
+    <div class="face-strip">
+        {% for face in faces %}
+        <div class="face-strip-item">
+            <a href="{% if face.cluster_id %}{{ url_for('cluster_detail', cluster_id=face.cluster_id) }}{% else %}#{% endif %}">
+                <img src="{{ url_for('thumbnail', face_id=face.id) }}" alt="Face #{{ face.id }}">
+            </a>
+            <span class="face-strip-label">
+                {% if face.dancer_name %}{{ face.dancer_name }}{% elif face.cluster_id %}Cluster #{{ face.cluster_id }}{% else %}?{% endif %}
+            </span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function drawOverlays() {
+    const img = document.getElementById('fullImage');
+    const container = document.getElementById('imageContainer');
+    const overlays = container.querySelectorAll('.face-overlay');
+
+    // Natural vs displayed dimensions for coordinate scaling
+    const scaleX = img.clientWidth / img.naturalWidth;
+    const scaleY = img.clientHeight / img.naturalHeight;
+
+    overlays.forEach(function(overlay) {
+        // bbox values are normalized [0,1]; multiply by displayed size directly
+        const x1 = parseFloat(overlay.dataset.x1) * img.clientWidth;
+        const y1 = parseFloat(overlay.dataset.y1) * img.clientHeight;
+        const x2 = parseFloat(overlay.dataset.x2) * img.clientWidth;
+        const y2 = parseFloat(overlay.dataset.y2) * img.clientHeight;
+
+        overlay.style.left = x1 + 'px';
+        overlay.style.top = y1 + 'px';
+        overlay.style.width = (x2 - x1) + 'px';
+        overlay.style.height = (y2 - y1) + 'px';
+        overlay.style.display = 'block';
+
+        // Make clickable if cluster exists
+        const clusterId = overlay.dataset.clusterId;
+        if (clusterId) {
+            overlay.style.cursor = 'pointer';
+            overlay.addEventListener('click', function() {
+                window.location.href = '/cluster/' + clusterId;
+            });
+        }
+    });
+}
+
+// Redraw on window resize
+window.addEventListener('resize', drawOverlays);
+</script>
+{% endblock %}

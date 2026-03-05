@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ studio_name }} — Photo Gallery</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-header">
+    <h1>{{ studio_name }}</h1>
+    <p class="subtitle">Photo Gallery</p>
+</header>
+
+<main class="container">
+    <div class="dancer-grid">
+        {% for dancer in dancers %}
+        <a class="dancer-card" href="{{ dancer.url }}">
+            <div class="thumb-wrapper">
+                {% if dancer.sample_thumb %}
+                <img src="{{ dancer.sample_thumb }}"
+                     alt="{{ dancer.name }}"
+                     loading="lazy">
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <h2>{{ dancer.name }}</h2>
+                <p class="photo-count">{{ dancer.photo_count }} photo{{ 's' if dancer.photo_count != 1 else '' }}</p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</main>
+
+<footer class="site-footer">
+    <p>{{ studio_name }} Photo Gallery</p>
+</footer>
+
+</body>
+</html>

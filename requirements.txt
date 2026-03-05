@@ -1,0 +1,8 @@
+insightface==0.7.3
+onnxruntime==1.17.1
+faiss-cpu==1.8.0
+networkx==3.2.1
+flask==3.0.2
+pillow==10.2.0
+tqdm==4.66.2
+numpy==1.26.4

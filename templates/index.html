@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Ballet Photo Organizer{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>Dashboard</h1>
+    <div class="stats-bar">
+        <div class="stat">
+            <span class="stat-value">{{ total_images }}</span>
+            <span class="stat-label">Images</span>
+        </div>
+        <div class="stat">
+            <span class="stat-value">{{ total_faces }}</span>
+            <span class="stat-label">Faces</span>
+        </div>
+        <div class="stat">
+            <span class="stat-value">{{ total_clusters }}</span>
+            <span class="stat-label">Clusters</span>
+        </div>
+        <div class="stat">
+            <span class="stat-value">{{ labeled_clusters }}</span>
+            <span class="stat-label">Labeled</span>
+        </div>
+    </div>
+</div>
+
+<form class="search-form" method="get" action="{{ url_for('index') }}">
+    <input
+        type="text"
+        name="q"
+        placeholder="Search by dancer name..."
+        value="{{ search_query }}"
+        class="search-input"
+        autocomplete="off"
+    >
+    <button type="submit" class="btn btn-primary">Search</button>
+    {% if search_query %}
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Clear</a>
+    {% endif %}
+</form>
+
+{% if clusters %}
+<div class="cluster-grid">
+    {% for cluster in clusters %}
+    <a href="{{ url_for('cluster_detail', cluster_id=cluster.id) }}" class="cluster-card">
+        <div class="cluster-thumbnails">
+            {% for face_id in cluster.sample_face_ids %}
+            <img
+                src="{{ url_for('thumbnail', face_id=face_id) }}"
+                alt="Face thumbnail"
+                class="cluster-thumb"
+                loading="lazy"
+            >
+            {% endfor %}
+            {% for _ in range(6 - cluster.sample_face_ids|length) %}
+            <div class="cluster-thumb cluster-thumb-empty"></div>
+            {% endfor %}
+        </div>
+        <div class="cluster-info">
+            <span class="cluster-name">
+                {% if cluster.dancer_name %}
+                    {{ cluster.dancer_name }}
+                {% else %}
+                    <em>Cluster #{{ cluster.id }}</em>
+                {% endif %}
+            </span>
+            <span class="cluster-count">{{ cluster.face_count }} face{{ 's' if cluster.face_count != 1 }}</span>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    {% if search_query %}
+        <p>No clusters match "<strong>{{ search_query }}</strong>".</p>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Clear search</a>
+    {% else %}
+        <p>No clusters found. Run the detection and clustering pipeline first.</p>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

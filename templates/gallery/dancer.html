@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ dancer.name }} — {{ studio_name }}</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<header class="site-header">
+    <h1>{{ studio_name }}</h1>
+    <p class="subtitle">{{ dancer.name }}</p>
+</header>
+
+<main class="container">
+    <a class="back-link" href="../index.html">&#8592; All Dancers</a>
+
+    <div class="dancer-toolbar">
+        <h1>{{ dancer.name }}</h1>
+        <a class="btn btn-primary" href="#" onclick="alert('Download All is a placeholder for a future release.'); return false;">
+            &#11015; Download All
+        </a>
+    </div>
+
+    <div class="photo-grid">
+        {% for photo in dancer.photos %}
+        <div class="photo-cell" data-index="{{ loop.index0 }}" data-full="{{ photo.full_url }}">
+            <img src="{{ photo.thumb_url }}"
+                 alt="{{ photo.filename }}"
+                 loading="lazy">
+        </div>
+        {% endfor %}
+    </div>
+</main>
+
+<!-- Lightbox -->
+<div class="lightbox-overlay" id="lightbox">
+    <button class="lightbox-close" id="lb-close" aria-label="Close">&times;</button>
+    <button class="lightbox-nav lightbox-prev" id="lb-prev" aria-label="Previous">&#8249;</button>
+    <button class="lightbox-nav lightbox-next" id="lb-next" aria-label="Next">&#8250;</button>
+    <img class="lightbox-img" id="lb-img" src="" alt="">
+    <div class="lightbox-counter" id="lb-counter"></div>
+</div>
+
+<footer class="site-footer">
+    <p>{{ studio_name }} Photo Gallery</p>
+</footer>
+
+<script>
+(function () {
+    "use strict";
+
+    var overlay  = document.getElementById("lightbox");
+    var lbImg    = document.getElementById("lb-img");
+    var lbClose  = document.getElementById("lb-close");
+    var lbPrev   = document.getElementById("lb-prev");
+    var lbNext   = document.getElementById("lb-next");
+    var lbCounter = document.getElementById("lb-counter");
+
+    var cells = Array.from(document.querySelectorAll(".photo-cell"));
+    var urls  = cells.map(function (c) { return c.getAttribute("data-full"); });
+    var current = 0;
+
+    function show(index) {
+        if (index < 0) index = urls.length - 1;
+        if (index >= urls.length) index = 0;
+        current = index;
+        lbImg.src = urls[current];
+        lbCounter.textContent = (current + 1) + " / " + urls.length;
+        overlay.classList.add("active");
+        document.body.style.overflow = "hidden";
+    }
+
+    function hide() {
+        overlay.classList.remove("active");
+        document.body.style.overflow = "";
+        lbImg.src = "";
+    }
+
+    cells.forEach(function (cell) {
+        cell.addEventListener("click", function () {
+            show(parseInt(cell.getAttribute("data-index"), 10));
+        });
+    });
+
+    lbClose.addEventListener("click", hide);
+    lbPrev.addEventListener("click", function (e) { e.stopPropagation(); show(current - 1); });
+    lbNext.addEventListener("click", function (e) { e.stopPropagation(); show(current + 1); });
+
+    overlay.addEventListener("click", function (e) {
+        if (e.target === overlay) hide();
+    });
+
+    document.addEventListener("keydown", function (e) {
+        if (!overlay.classList.contains("active")) return;
+        if (e.key === "Escape")      hide();
+        if (e.key === "ArrowLeft")   show(current - 1);
+        if (e.key === "ArrowRight")  show(current + 1);
+    });
+
+    // Preload next/prev images when lightbox is open
+    lbImg.addEventListener("load", function () {
+        var nextIdx = (current + 1) % urls.length;
+        var prevIdx = (current - 1 + urls.length) % urls.length;
+        new Image().src = urls[nextIdx];
+        new Image().src = urls[prevIdx];
+    });
+})();
+</script>
+
+</body>
+</html>
