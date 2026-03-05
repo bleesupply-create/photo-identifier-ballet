@@ -42,7 +42,8 @@ Detect faces in every photo, extract a numeric "fingerprint" (embedding) per fac
 | 3. Label UI | Web interface to name clusters, review faces | 1 day coding | — |
 | 4. Organize | Copy/move/symlink photos into dancer folders | 0.5 day coding | ~30 minutes |
 | 5. Polish | Error handling, progress bars, resume support | 0.5 day coding | — |
-| **Total** | | **3-4 days coding** | **~14 hrs processing** |
+| 6. Gallery site | Static photo gallery for sharing with parents | 1 day coding | — |
+| **Total** | | **4-5 days coding** | **~14 hrs processing** |
 
 ### Processing Time Estimate (500K photos on 8-core i9)
 - InsightFace: ~150-250ms per image per core
@@ -103,8 +104,17 @@ CREATE TABLE clusters (
 │   ├── index.html         # Dashboard: all clusters overview
 │   ├── cluster.html       # Single cluster: face grid + name input
 │   └── image.html         # Single image: all faces highlighted
+├── gallery.py             # Generate static photo gallery website
+├── templates/
+│   ├── gallery/
+│   │   ├── home.html      # Dancer directory page
+│   │   └── dancer.html    # Per-dancer photo grid + lightbox
+│   ├── index.html         # Dashboard: all clusters overview
+│   ├── cluster.html       # Single cluster: face grid + name input
+│   └── image.html         # Single image: all faces highlighted
 ├── static/
 │   └── style.css
+├── gallery_output/        # Generated static site (deploy this)
 └── ballet_photos.db       # SQLite database (auto-created)
 ```
 
@@ -205,6 +215,54 @@ CREATE TABLE clusters (
 5. Open web UI → browse clusters, label names, merge/split works
 6. Run organizer → folders created with correct photos per dancer
 7. Spot-check: open random dancer folder, verify all photos show the same person
+
+## Step 6: Static Photo Gallery Website (Sharing)
+
+### What It Does
+After photos are organized by dancer, generate a clean, password-protected photo gallery website. Each dancer gets their own page. Parents receive a link to view/download their kid's photos.
+
+### Tech
+- **Static site generator**: Jinja2 templates → plain HTML/CSS/JS (no framework needed)
+- **Hosting**: Vercel or Netlify (free tier — unlimited bandwidth, plenty for photos)
+- **Image hosting**: Thumbnails embedded in site, full-res served from Cloudflare R2 or Vercel Blob
+- **Password protection**: Simple per-dancer password gate (JS-based or Netlify/Vercel auth)
+
+### Cost
+| Item | Cost |
+|---|---|
+| Vercel/Netlify hosting | $0 (free tier) |
+| Cloudflare R2 storage (10GB free) | $0 for first ~20K photos |
+| Custom domain (optional) | ~$12/year |
+| **Total** | **$0 - $12/year** |
+
+### Features
+- **Home page**: Studio name/logo, list of dancers (password-gated)
+- **Dancer page**: Thumbnail grid of all their photos, sorted by date
+- **Lightbox**: Click photo → full-screen view with download button
+- **Bulk download**: "Download All" button → ZIP of dancer's photos
+- **Mobile-friendly**: Responsive grid, works on phones
+- **Auto-generated**: One command rebuilds the entire site after new photos are organized
+
+### How It Works
+```
+organizer.py outputs folders → gallery.py reads folders → generates HTML per dancer → deploy to Vercel
+```
+
+### Workflow for Parents
+1. Studio sends parent a link: `photos.yourstudio.com/dancers/emma`
+2. Parent enters simple password (dancer's last name, or studio-assigned code)
+3. Browse photos, tap to view full-size, download favorites or all
+
+### Implementation
+- `gallery.py`: New script added to project
+  - Reads organized dancer folders
+  - Generates thumbnails (300px wide) for fast loading
+  - Renders Jinja2 templates → `gallery_output/` directory
+  - Each dancer gets `gallery_output/<dancer_name>/index.html`
+- `templates/gallery/`: HTML templates
+  - `home.html` — dancer directory
+  - `dancer.html` — photo grid with lightbox
+- One-command deploy: `vercel gallery_output/` or `netlify deploy`
 
 ## Future Enhancements (not in MVP)
 - Auto-label using a few tagged reference photos per dancer
